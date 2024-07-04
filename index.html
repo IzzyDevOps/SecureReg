@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Document metadata -->
+    <meta charset="UTF-8"> <!-- Character encoding -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsive viewport -->
+    <title>SecureReg</title> <!-- Document title -->
+    <!-- External CSS file -->
+    <link rel="stylesheet" href="style.css">
+    <!-- External JavaScript file with deferred loading -->
+    <script src="reg.js" defer></script>
+   <!-- Google reCAPTCHA script (commented out) -->
+   <!-- <script src="https://www.google.com/recaptcha/api.js" async defer></script>-->
+</head>
+<body>
+    <!-- Main container -->
+    <div class="container">
+        <!-- Hero section (empty div) -->
+        <div class="hero"></div>
+        <!-- Main content -->
+        <div class="main">  	
+            <!-- Checkbox for login/register toggle -->
+            <input type="checkbox" id="chk" aria-hidden="true">
+    
+            <!-- Login form -->
+            <div class="login">
+                <form class="form">
+                    <label for="chk" aria-hidden="true">Log in</label> <!-- Label for login toggle -->
+                    <!-- Input fields for email and password -->
+                    <input class="input" type="email" id="loginEmail" name="email" placeholder="Email" required>
+                    <input class="input" type="password" id="loginPassword" name="pswd" placeholder="Password" required>
+                    <!-- Login button -->
+                    <button id="loginBtn">Login</button>
+                </form>
+            </div>
+    
+            <!-- Registration form -->
+            <div class="register">
+                <form class="form">
+                    <label for="chk" aria-hidden="true">Register</label> <!-- Label for register toggle -->
+                    <!-- Input fields for username, email, and password -->
+                    <input class="input" type="text" id="username" placeholder="Username" required>
+                    <input class="input" type="email" id="email" placeholder="Email" required>
+                    <input class="input" type="password" id="password" name="password" placeholder="Password" required>
+                    <!-- Span for toggling password visibility -->
+                    <span class="toggle-password" onclick="togglePasswordVisibility('password', this)"></span>
+                    <!-- Password strength indicator -->
+                    <div class="indicator-container">
+                        <div class="indicator"></div>
+                    </div>
+                    <!-- Password strength display -->
+                    <p style="color: #fff;">Password Strength: <span class="strength"></span></p>
+                    <!-- Register button -->
+                    <button id="registerBtn">Register</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK import -->
+    <script type="module">
+        // Import necessary functions from Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+        import { getDatabase, set, ref, update } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCOy2xNOrT8NEbJsqsu9oQ0DwixogCaXec",
+          authDomain: "reg-1928e.firebaseapp.com",
+          databaseURL: "https://reg-1928e-default-rtdb.firebaseio.com",
+          projectId: "reg-1928e",
+          storageBucket: "reg-1928e.appspot.com",
+          messagingSenderId: "489483704904",
+          appId: "1:489483704904:web:fc55935f74a087f238967d"
+        };
+      
+        // Initialize Firebase app
+        const app = initializeApp(firebaseConfig);
+        // Get Firebase database and authentication instances
+        const database = getDatabase(app);
+        const auth = getAuth();
+    
+        // Get references to HTML elements
+        const registerBtn = document.getElementById('registerBtn');
+        const loginBtn = document.getElementById('loginBtn');
+        const form = document.querySelector('.register form');
+    
+        // Register button click event listener
+        registerBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent form submission
+    
+            // Get user input
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value;
+    
+            // Create user with email and password
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // User signed up
+                    const user = userCredential.user;
+    
+                    // Save user data in database
+                    set(ref(database, 'users/' + user.uid), {
+                        username: username,
+                        email: email
+                    })
+                    alert('User created!');
+                    // Reset form after successful registration
+                    form.reset();
+                })
+                .catch((error) => {
+                    const errorMessage = error.message;
+                    alert(errorMessage);
+                });
+        });
+        
+        // Login button click event listener
+        loginBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent form submission
+    
+            // Get user input
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+    
+            // Sign in user with email and password
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // User signed in 
+                    const user = userCredential.user;
+
+                    // Update user's last login time
+                    const dt = new Date();
+                    update(ref(database, 'users/' + user.uid), {
+                        last_login: dt,
+                    });
+
+                    alert('User Verification');
+
+                    // Redirect to the OTP HTML file
+                    window.location.href = "otp.html";
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+
+                    alert(errorMessage);
+                });
+        });
+
+        // Check if user is logged in
+        const user = auth.currentUser; 
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            // User is signed in
+            const uid = user.uid;
+            // Additional actions for signed-in users
+          } else {
+            // User is signed out
+            // Actions for signed-out users
+          }
+        });
+
+        // Logout button click event listener
+        logout.addEventListener('click',(e)=>{
+            signOut(auth).then(() => {
+                // Sign-out successful
+                alert('user logged out')
+            }).catch((error) => {
+                // An error occurred during sign-out
+                const errorCode = error.code;
+                const errorMessage = error.message;
+                alert(errorMessage);
+            });
+        });
+
+    </script>
+</body>
+</html>
